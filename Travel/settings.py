@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     'cities',
     'trains',
     'crispy_forms',
+    'routes',
 ]
 
 MIDDLEWARE = [

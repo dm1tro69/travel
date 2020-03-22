@@ -21,9 +21,10 @@ from . import views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', views.home),
+    #path('', views.home),
     path('cities/', include('cities.urls', 'city')),
     path('trains/', include('trains.urls', 'train')),
+    path('', include('routes.urls', 'rout')),
 ]
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
