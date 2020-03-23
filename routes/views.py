@@ -1,8 +1,9 @@
 from django.contrib import messages
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 
+from routes.models import Rout
 from trains.models import Train
-from .forms import RoutForm
+from .forms import RoutForm, RoutModelForm
 
 
 # Create your views here.
@@ -110,3 +111,47 @@ def find_routes(request):
         messages.error(request, 'Создайте маршрут')
         form = RoutForm()
         return render(request, 'routes/home.html', {'form': form})
+
+
+def add_route(request):
+    if request.method == 'POST':
+        form = RoutModelForm(request.POST)
+        if form.is_valid():
+            data = form.cleaned_data
+            name = data['name']
+            travel_times = data['travel_times']
+            from_city = data['from_city']
+            to_city = data['to_city']
+            across_cities = data['across_cities']
+            trains = [int(x) for x in across_cities if x.isalnum()]
+            qs = Train.objects.filter(id__in=trains)
+            route = Rout(name=name, from_city=from_city, to_city=to_city, travel_times=travel_times)
+            route.save()
+            for dr in qs:
+                route.across_cities.add(dr.id)
+            messages.success(request, 'Маршрут успешно сохранён')
+            return redirect('/')
+
+    else:
+        data = request.GET
+        if data:
+            travel_times = data['travel_times']
+            from_city = data['from_city']
+            to_city = data['to_city']
+            across_cities = data['across_cities']
+            trains = [int(x) for x in across_cities if x.isalnum()]
+            qs = Train.objects.filter(id__in=trains)
+            train_list = ' '.join(str(i) for i in trains)
+            form = RoutModelForm(initial={'from_city': from_city, 'to_city': to_city,
+                                          'across_cities': train_list, 'travel_times': travel_times})
+            route_desc = []
+            for tr in qs:
+                dsc = 'Поезд {} следующий из г.{} в г.{} .Время в пути {} '.format(tr.name, tr.from_city, tr.to_city, tr.travel_time)
+                route_desc.append(dsc)
+            context = {'form': form, 'descr': route_desc, 'from_city': from_city, 'to_city': to_city, 'travel_times': travel_times}
+
+            #assert False
+            return render(request, 'routes/create.html', context)
+        else:
+            messages.error(request, 'Невозможно сохранить маршрут')
+            return redirect('/')
